@@ -1,0 +1,697 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Obsluha - Restaurace</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .header { text-align: center; margin-bottom: 30px; }
+        .header h1 {
+            color: white;
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+        .cart-item button {
+            width: 40px;
+            height: 40px;
+            font-size: 20px;
+            margin: 0 2px;
+            border: 1px solid #ddd;
+            background: white;
+            border-radius: 8px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .cart-item button:hover {
+            background: #f5f5f5;
+        }
+        .cart-item button:last-child {
+            color: #e53e3e;
+        }
+        .location-title {
+            color: #ee5a24;
+            font-size: 1.2em;
+            font-weight: bold;
+            margin: 20px 0 10px 10px;
+            padding-left: 10px;
+            border-left: 4px solid #ee5a24;
+        }
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: rgba(255,255,255,0.1);
+            padding: 8px 15px;
+            border-radius: 20px;
+            margin-bottom: 15px;
+            justify-content: center;
+        }
+        .logout-btn {
+            background: rgba(255,255,255,0.2);
+            color: white;
+            border: none;
+            padding: 5px 12px;
+            border-radius: 15px;
+            cursor: pointer;
+            font-size: 0.9em;
+            transition: all 0.3s ease;
+        }
+        .logout-btn:hover {
+            background: rgba(255,255,255,0.3);
+        }
+        .tables-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            padding: 10px;
+            margin-bottom: 15px;
+            background: rgba(238, 90, 36, 0.05);
+            border-radius: 10px;
+        }
+        .nav-links {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        .nav-link {
+            padding: 10px 20px;
+            background: rgba(255,255,255,0.2);
+            color: white;
+            text-decoration: none;
+            border-radius: 25px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+        .nav-link:hover {
+            background: rgba(255,255,255,0.3);
+            transform: translateY(-2px);
+        }
+        .nav-link.active { background: white; color: #ff6b6b; }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.1);
+        }
+        .section-title {
+            font-size: 1.6em;
+            color: #ee5a24;
+            margin: 25px 0 10px 0;
+            font-weight: bold;
+        }
+        .tables-bar {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-bottom: 25px;
+        }
+        .table-btn {
+            min-width: 60px;
+            min-height: 60px;
+            border-radius: 12px;
+            border: 2px solid #e2e8f0;
+            background: #fafbfc;
+            color: #2d3748;
+            font-size: 1.15em;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all .18s;
+        }
+        .table-btn.occupied { background: #e53e3e; color: #fff; border-color: #e53e3e; }
+        .table-btn.to_clean { background: #fbbf24; color: #2d3748; border-color: #fbbf24; }
+        .menu-section { margin: 20px 0; }
+        .menu-items {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+            gap: 16px;
+        }
+        .menu-item {
+            background: #f8fafc;
+            border-radius: 10px;
+            border: 1.5px solid #e2e8f0;
+            padding: 14px 12px 13px 12px;
+        }
+        .item-title { font-weight: bold; font-size: 1.14em; margin-bottom: 6px; color: #222; }
+        .item-desc { color: #555; font-size: .97em; margin-bottom: 10px; }
+        .item-price { color: #5a67d8; font-weight: bold; font-size: 1.1em; margin-bottom: 10px; }
+        .item-controls { display: flex; gap: 7px; align-items: center; }
+        .item-btn {
+            background: #5a67d8; color: #fff; border: none; border-radius: 6px;
+            padding: 7px 12px; font-weight: bold; cursor: pointer; transition: background .18s;
+        }
+        .item-btn:hover { background: #F44336;}
+        .item-note { width: 100%; padding: 6px 8px; border: 1px solid #cbd5e1; border-radius: 6px; margin-bottom: 6px; font-size: .98em;}
+        .cart { background: #f1f5f9; border-radius: 13px; padding: 16px 17px; margin: 18px 0;}
+        .cart-title { font-size: 1.2em; font-weight: bold; color: #2d3748; margin-bottom: 9px;}
+        .cart-empty { color: #8e9ab2; text-align: center; margin: 18px 0;}
+        .cart-list { list-style: none; padding: 0; margin: 0 0 12px 0;}
+        .cart-item { display: flex; align-items: flex-start; justify-content: space-between; border-bottom: 1px solid #e2e8f0; padding: 7px 0;}
+        .cart-item:last-child { border-bottom: none;}
+        .cart-item-details { flex: 1;}
+        .cart-item-name { font-weight: bold; }
+        .cart-item-note { font-size: .96em; color: #777; font-style: italic; }
+        .cart-item-qty { color: #555; margin-left: 7px;}
+        .cart-item-total { font-weight: bold; color: #5a67d8; }
+        .cart-footer { display: flex; align-items: center; justify-content: space-between; margin-top: 9px;}
+        .cart-sum { font-size: 1.1em; color: #2d3748; font-weight: bold;}
+        .cart-btn { background: #38a169; color: #fff; border: none; border-radius: 7px; padding: 10px 22px; font-size: 1.05em; font-weight: bold; cursor: pointer; transition: background .17s;}
+        .cart-btn:disabled { background: #a0aec0; cursor: not-allowed;}
+        .order-section { margin: 28px 0 16px 0;}
+        .order-title { font-size: 1.13em; font-weight: bold; margin-bottom: 9px;}
+        .order-list { list-style: none; padding: 0; margin: 0;}
+        .order-item { display: flex; align-items: flex-start; gap: 15px; border-bottom: 1px solid #e2e8f0; padding: 7px 0;}
+        .order-status { font-size: .93em; border-radius: 5px; padding: 2px 8px; margin-left: 7px;}
+        .status-pending { background: #e2e8f0; color: #222; }
+        .status-preparing { background: #faf089; color: #b7791f;}
+        .status-ready { background: #68d391; color: #22543d;}
+        .status-delivered { background: #9ae6b4; color: #22543d;}
+        .status-problem { background: #feb2b2; color: #742a2a;}
+        .status-cancelled { background: #e53e3e; color: #fff;}
+        .order-note { font-size: .97em; color: #888; font-style: italic;}
+        .msg { background: #e6fffa; color: #234e52; border-radius: 8px; padding: 14px; margin: 15px 0 7px 0; text-align: center; font-weight: bold;}
+        .err { background: #fff5f5; color: #c53030; border-radius: 8px; padding: 14px; margin: 15px 0 7px 0; text-align: center; font-weight: bold;}
+        @media (max-width: 650px) {
+            .container { padding: 7px 4px 15px 4px; }
+            .menu-items { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🍕 Restaurační systém</h1>
+        <div id="userInfo" class="user-info" style="display: none;">
+            <span>👤 Přihlášen jako: <strong id="currentUser"></strong></span>
+            <button class="logout-btn" onclick="logout()">Odhlásit se</button>
+        </div>
+        <div class="nav-links">
+            <a href="index.html" class="nav-link active" id="nav-obsluha">🏠 Objednávky</a>
+            <a href="kitchen.html" class="nav-link" id="nav-kuchyn">👨‍🍳 Kuchyň</a>
+            <a href="bar.html" class="nav-link" id="nav-bar">🍺 Bar</a>
+            <a href="serving.html" class="nav-link" id="nav-servirovani">🍽️ Servírování</a>
+            <a href="billing.html" class="nav-link" id="nav-uctovani">💰 Účtování</a>
+        </div>
+    </div>
+
+    <div class="container">
+        <div id="msg"></div>
+        <div class="section-title">Vyberte stůl:</div>
+        <div id="tables" class="tables-bar"></div>
+        <div id="cleanTableSection" style="margin-top: 20px; text-align: center; display: none;">
+            <button class="item-btn" onclick="markTableAsCleaned()">Označit stůl jako uklizený</button>
+        </div>
+        <section id="menu">
+            <div class="menu-section">
+                <h2>Menu Pizzy</h2>
+                <div id="pizzaMenu" class="menu-items"></div>
+            </div>
+            <div class="menu-section">
+                <h2>Menu Nápoje</h2>
+                <div id="drinkMenu" class="menu-items"></div>
+            </div>
+        </section>
+        <section id="cartSection" class="cart">
+            <div class="cart-title">🛒 Košík</div>
+            <ul id="cartList" class="cart-list"></ul>
+            <div>
+                <label for="customerName">Jméno zákazníka:</label>
+                <input type="text" id="customerName" class="item-note" placeholder="Jméno zákazníka">
+            </div>
+            <div class="cart-footer">
+                <span class="cart-sum" id="cartSum"></span>
+                <button class="cart-btn" id="cartSubmit" onclick="submitOrder()">Odeslat objednávku</button>
+            </div>
+        </section>
+        <section id="ordersSection" class="order-section">
+            <div class="order-title">Aktuální objednávky u stolu</div>
+            <ul id="orderList" class="order-list"></ul>
+        </section>
+    </div>
+
+    <!-- Modal pro zadání jména -->
+    <div id="employeeModal" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: none; z-index: 1000;">
+        <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; padding: 30px; border-radius: 10px; text-align: center;">
+            <h3>Zadejte své jméno</h3>
+            <input type="text" id="employeeNameInput" placeholder="Vaše jméno" style="padding: 10px; margin: 10px; border: 1px solid #ccc; border-radius: 5px;">
+            <br>
+            <button onclick="saveEmployeeName()" style="padding: 10px 20px; background: #38a169; color: white; border: none; border-radius: 5px; cursor: pointer;">Pokračovat</button>
+        </div>
+    </div>
+        <script>
+    // Funkce pro správu uživatele
+    function logout() {
+        if (confirm('Opravdu se chcete odhlásit?')) {
+            localStorage.removeItem('employee_name');
+            localStorage.removeItem('employee_id');
+            location.reload();
+        }
+    }
+
+    function checkEmployeeName() {
+        const employeeName = localStorage.getItem('employee_name');
+        if (!employeeName) {
+            showEmployeeModal();
+        } else {
+            updateUserInfo();
+        }
+    }
+
+    function saveEmployeeName() {
+        const input = document.getElementById('employeeNameInput');
+        const name = input.value.trim();
+        if (name) {
+            localStorage.setItem('employee_name', name);
+            hideEmployeeModal();
+            updateUserInfo();
+        }
+    }
+
+    function updateUserInfo() {
+        const employeeName = localStorage.getItem('employee_name');
+        const userInfo = document.getElementById('userInfo');
+        const currentUser = document.getElementById('currentUser');
+        
+        if (employeeName) {
+            currentUser.textContent = employeeName;
+            userInfo.style.display = 'flex';
+        } else {
+            userInfo.style.display = 'none';
+        }
+    }
+
+    function showEmployeeModal() {
+        document.getElementById('employeeModal').style.display = 'block';
+    }
+
+    function hideEmployeeModal() {
+        document.getElementById('employeeModal').style.display = 'none';
+    }
+
+    // Hlavní proměnné
+    const API = 'api/restaurant-api.php';
+    let tables = [];
+    let pizzas = [];
+    let drinks = [];
+    let selectedTable = null;
+    let cart = [];
+    let orders = [];
+
+    // Utility funkce
+    function showMsg(msg, good=true) {
+        document.getElementById('msg').innerHTML = msg ? `<div class="${good?'msg':'err'}">${msg}</div>` : '';
+    }
+
+    function api(action, data={}, method='GET') {
+        let url = API + '?action=' + action;
+        if (method === 'GET' && Object.keys(data).length) {
+            url += '&' + new URLSearchParams(data);
+            return fetch(url).then(r=>r.json());
+        }
+        return fetch(url, {
+            method: method,
+            headers: { 'Content-Type': 'application/json' },
+            body: method==='GET'?null:JSON.stringify(data)
+        }).then(r=>r.json());
+    }
+
+    // Funkce pro stoly
+    function renderTables() {
+        const el = document.getElementById('tables');
+        el.innerHTML = '';
+
+        const locationGroups = {};
+        tables.forEach(t => {
+            const locationName = t.location_name || 'Auto';
+            if (!locationGroups[locationName]) {
+                locationGroups[locationName] = [];
+            }
+            locationGroups[locationName].push(t);
+        });
+
+        Object.entries(locationGroups).forEach(([locationName, locationTables]) => {
+            const sectionTitle = document.createElement('div');
+            sectionTitle.className = 'location-title';
+            sectionTitle.textContent = locationName;
+            el.appendChild(sectionTitle);
+
+            const tablesContainer = document.createElement('div');
+            tablesContainer.className = 'tables-grid';
+
+            locationTables.forEach(t => {
+                let btnClass = 'table-btn';
+                if (t.status === 'occupied') btnClass += ' occupied';
+                if (t.status === 'to_clean') btnClass += ' to_clean';
+
+                let style = '';
+                if (String(selectedTable) === String(t.table_number)) {
+                    style = 'outline: 3px solid green;';
+                }
+
+                tablesContainer.innerHTML += `
+                    <button class="${btnClass}"
+                            style="${style}"
+                            onclick="selectTable(${t.table_number})">
+                        ${t.table_code}
+                    </button>`;
+            });
+
+            el.appendChild(tablesContainer);
+        });
+    }
+
+    function selectTable(num) {
+        selectedTable = num;
+        renderTables();
+        refreshOrders();
+        showCleanTableButton();
+    }
+
+    function refreshTables() {
+        api('tables').then(res => {
+            if (!res.success) {
+                showMsg(res.error, false);
+                return;
+            }
+            tables = res.data.tables;
+            renderTables();
+            showCleanTableButton();
+        });
+    }
+
+    // Funkce pro menu
+    function refreshMenu() {
+        Promise.all([
+            api('pizza-categories'),
+            api('drink-categories')
+        ]).then(([foodRes, drinkRes]) => {
+            let allCategories = [];
+
+            if (foodRes.success) {
+                allCategories = [...allCategories, ...foodRes.data.categories];
+            }
+
+            if (drinkRes.success) {
+                allCategories = [...allCategories, ...drinkRes.data.categories];
+            }
+
+            Promise.all([
+                api('pizza-menu'),
+                api('drink-menu')
+            ]).then(([foodMenuRes, drinkMenuRes]) => {
+                if (foodMenuRes.success) {
+                    pizzas = foodMenuRes.data.pizzas;
+                }
+
+                if (drinkMenuRes.success) {
+                    drinks = drinkMenuRes.data.drinks;
+                }
+
+                const sortedCategories = sortCategories(allCategories);
+                renderCategoryMenus(sortedCategories);
+            });
+        });
+    }
+
+    function renderCategoryMenus(categories) {
+        const menuSection = document.getElementById('menu');
+        menuSection.innerHTML = '';
+
+        categories.forEach(category => {
+            const categoryId = category.replace(/[^a-zA-Z0-9]/g, '') + 'Menu';
+            const categoryPizzas = pizzas.filter(item => item.category === category);
+            const categoryDrinks = drinks.filter(item => item.category === category);
+
+            const sortItems = (items) => {
+                return items.sort((a, b) => {
+                    const numA = parseInt(a.type.match(/\d+/) || [0]);
+                    const numB = parseInt(b.type.match(/\d+/) || [0]);
+                    return numA - numB;
+                });
+            };
+
+            const sortedPizzas = sortItems(categoryPizzas);
+            const sortedDrinks = sortItems(categoryDrinks);
+            const categoryItems = [...sortedPizzas, ...sortedDrinks];
+
+            if (categoryItems.length > 0) {
+                const categorySection = document.createElement('div');
+                categorySection.className = 'menu-section';
+                categorySection.innerHTML = `
+                    <h2>Menu ${category}</h2>
+                    <div id="${categoryId}" class="menu-items"></div>
+                `;
+                menuSection.appendChild(categorySection);
+
+                renderMenu(categoryId, categoryItems, categoryPizzas.length > 0 ? 'pizza' : 'drink');
+            }
+        });
+    }
+
+    function sortCategories(categories) {
+        const categoryPriority = {
+            'Predkrm': 1, 'Pizza': 2, 'Pasta': 3, 'Dezert': 4,
+            'Negroni': 5, 'Spritz': 6, 'Koktejl': 7, 'Digestiv': 8,
+            'Vino': 9, 'Pivo': 10, 'Nealko': 11
+        };
+
+        return [...new Set(categories)].sort((a, b) => {
+            const priorityA = categoryPriority[a] || 999;
+            const priorityB = categoryPriority[b] || 999;
+            return priorityA - priorityB;
+        });
+    }
+
+    function renderMenu(id, items, type) {
+        const el = document.getElementById(id);
+        if (!el) return;
+
+        if (items.length === 0) {
+            el.innerHTML = '<div>Žádné položky v nabídce.</div>';
+            return;
+        }
+
+        el.innerHTML = '';
+        items.forEach(item => {
+            const itemElement = document.createElement('div');
+            itemElement.className = 'menu-item';
+            itemElement.innerHTML = `
+                <div class="item-title">${item.name}</div>
+                <div class="item-desc">${item.description || ''}</div>
+                <div class="item-price">${item.price} Kč</div>
+                <input placeholder="Poznámka (např. bez sýra, led...)" class="item-note" id="${type}-note-${item.id}">
+                <div class="item-controls">
+                    <button class="item-btn" onclick="addToCart('${type}','${item.id}')">Přidat</button>
+                </div>
+            `;
+            el.appendChild(itemElement);
+        });
+    }
+
+    // Funkce pro košík
+    function addToCart(type, id) {
+    const list = type==='pizza'?pizzas:drinks;
+    const item = list.find(x => x.id == id);
+    if (!item) return;
+    const note = document.getElementById(`${type}-note-${item.id}`).value.trim();
+    
+    // ✅ OPRAVENÉ MAPOVÁNÍ - zachovej původní kategorie
+    let itemType = item.category || type;
+    
+    // Mapování jen pro jídelní kategorie
+    if (itemType === 'pizza') itemType = 'pizza';
+    else if (itemType === 'pasta' || itemType === 'Pasta') itemType = 'pasta';
+    else if (itemType === 'predkrm' || itemType === 'Predkrm') itemType = 'predkrm';
+    else if (itemType === 'dezert' || itemType === 'Dezert') itemType = 'dezert';
+    // ✅ NÁPOJE - zachovej původní kategorie!
+    // (pivo, vino, nealko, spritz, negroni, koktejl, digestiv zůstávají jak jsou)
+    
+    let existing = cart.find(c=>c.type===itemType&&c.id==id&&c.note===note);
+    if(existing) existing.qty++;
+    else cart.push({type: itemType, id, name:item.name, price:item.price, qty:1, note});
+    renderCart();
+    document.getElementById(`${type}-note-${item.id}`).value = '';
+}
+
+    function renderCart() {
+        const el = document.getElementById('cartList');
+        if (!cart.length) { 
+            el.innerHTML = '<li class="cart-empty">Košík je prázdný</li>'; 
+        } else {
+            el.innerHTML = '';
+            cart.forEach((item, idx) => {
+                el.innerHTML += `<li class="cart-item">
+                    <div class="cart-item-details">
+                        <span class="cart-item-name">${item.name}</span>
+                        <span class="cart-item-qty">${item.qty}×</span>
+                        ${item.note?`<div class="cart-item-note">📝 ${item.note}</div>`:''}
+                    </div>
+                    <div class="cart-item-total">${item.price*item.qty} Kč</div>
+                    <button onclick="changeQty(${idx},-1)" style="margin-left:7px;">−</button>
+                    <button onclick="changeQty(${idx},1)">+</button>
+                    <button onclick="removeCart(${idx})" style="margin-left:5px;color:red;">✖</button>
+                </li>`;
+            });
+        }
+        const sum = cart.reduce((s,x)=>s+x.price*x.qty,0);
+        document.getElementById('cartSum').textContent = 'Celkem: ' + sum + ' Kč';
+        document.getElementById('cartSubmit').disabled = !cart.length || !selectedTable;
+    }
+
+    function changeQty(idx, delta) {
+        cart[idx].qty += delta;
+        if (cart[idx].qty < 1) cart.splice(idx,1);
+        renderCart();
+    }
+
+    function removeCart(idx) {
+        cart.splice(idx,1);
+        renderCart();
+    }
+
+    // Funkce pro objednávky
+    function submitOrder() {
+    if (!cart.length || !selectedTable) return;
+    const customerName = document.getElementById('customerName').value;
+    const items = [];
+    cart.forEach(item => {
+        for (let i = 0; i < item.qty; i++) {
+            items.push({
+                type: item.type, // ← Teď už bude správný typ z category
+                name: item.name,
+                quantity: 1,
+                unit_price: item.price,
+                note: item.note
+            });
+        }
+    });
+        
+        api('add-order', {
+            table: selectedTable,
+            items,
+            customer_name: customerName,
+            employee_name: localStorage.getItem('employee_name')
+        }, 'POST').then(res => {
+            if (res.success) {
+                showMsg('Objednávka byla úspěšně odeslána!');
+                cart = [];
+                renderCart();
+                refreshOrders();
+                refreshTables();
+            } else showMsg(res.error, false);
+        });
+    }
+
+    function refreshOrders() {
+        if (!selectedTable) return;
+        api('table-orders', {table_number: selectedTable}).then(res => {
+            orders = res.success ? res.data.orders : [];
+            renderOrders();
+        });
+    }
+
+    function renderOrders() {
+        const el = document.getElementById('orderList');
+        if (!orders.length) { 
+            el.innerHTML = '<li>Žádné objednávky.</li>'; 
+            return; 
+        }
+        el.innerHTML = '';
+        orders.forEach(order => {
+            let statusClass = `status-${order.status}`;
+            let statusText = order.status;
+            let statusStyle = '';
+
+            const allDelivered = order.items.every(item => item.status === 'delivered');
+
+            if (allDelivered) {
+                statusText = 'Doručeno';
+                statusStyle = 'background-color: #9ae6b4; color: #22543d;';
+            } else {
+                statusText = 'Doručována';
+                statusStyle = 'background-color: #e53e3e; color: #fff;';
+            }
+
+            el.innerHTML += `<li class="order-item">
+                <div>
+                    <span>Objednávka #${order.id}</span>
+                    <span class="order-status ${statusClass}" style="${statusStyle}">${statusText}</span>
+                </div>
+                <div>
+                    ${order.items.map(item=>
+                        `${item.item_name} (${item.quantity}×, ${item.unit_price} Kč)${item.note ? `<span class="order-note">📝 ${item.note}</span>`:''}`
+                    ).join('<br>')}
+                </div>
+            </li>`;
+        });
+    }
+
+    // Úklid stolů
+    function showCleanTableButton() {
+        const cleanTableSection = document.getElementById('cleanTableSection');
+        if (!selectedTable) {
+            cleanTableSection.style.display = 'none';
+            return;
+        }
+
+        const table = tables.find(t => parseInt(t.table_number) === selectedTable);
+        if (table && table.status === 'to_clean') {
+            cleanTableSection.style.display = 'block';
+        } else {
+            cleanTableSection.style.display = 'none';
+        }
+    }
+
+    function markTableAsCleaned() {
+        fetch(API + '?action=mark-table-as-cleaned', {
+            method: 'POST',
+            headers: {'Content-Type':'application/json'},
+            body: JSON.stringify({table_number: selectedTable})
+        })
+        .then(r=>r.json())
+        .then(res => {
+            if (res.success) {
+                showMsg('Stůl byl označen jako uklizený!');
+                refreshTables();
+                showCleanTableButton();
+                refreshOrders();
+            } else {
+                showMsg(res.error, false);
+            }
+        });
+    }
+
+    // Hlavní smyčka
+    function loop() {
+        refreshTables();
+        if (selectedTable) {
+            refreshOrders();
+        }
+        setTimeout(loop, 6000);
+    }
+
+    // Global functions pro onclick handlery
+    window.logout = logout;
+
+    // Inicializace
+    checkEmployeeName();
+    refreshTables();
+    refreshMenu();
+    renderCart();
+    refreshOrders();
+    setTimeout(loop, 6000);
+    </script>
+</body>
+</html>

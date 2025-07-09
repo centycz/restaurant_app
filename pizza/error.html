@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chyba - Přehledy prodejů</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .error-container {
+            max-width: 600px;
+            margin: 50px auto;
+            background-color: #fff;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+        h1 {
+            color: #d32f2f;
+            margin-bottom: 20px;
+        }
+        p {
+            color: #666;
+            line-height: 1.6;
+        }
+        .button {
+            display: inline-block;
+            padding: 10px 20px;
+            background-color: #2196F3;
+            color: white;
+            text-decoration: none;
+            border-radius: 4px;
+            margin-top: 20px;
+        }
+        .button:hover {
+            background-color: #1976D2;
+        }
+    </style>
+</head>
+<body>
+    <div class="error-container">
+        <h1>Nastala chyba</h1>
+        <p>Omlouváme se, ale požadovaná stránka není momentálně dostupná.</p>
+        <p>Zkuste prosím:</p>
+        <ul style="text-align: left;">
+            <li>Obnovit stránku</li>
+            <li>Zkontrolovat připojení k internetu</li>
+            <li>Vrátit se později</li>
+        </ul>
+        <a href="/" class="button">Zpět na hlavní stránku</a>
+    </div>
+</body>
+</html>
