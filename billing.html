@@ -418,40 +418,117 @@
 }
 
 // MODAL PRO ZAPLACENÍ CELÉ OBJEDNÁVKY
-function showConfirmModal(table_number) {
+async function showConfirmModal(table_number) {
     currentTableToPay = table_number;
     const modalBg = document.getElementById('modal-bg');
     modalBg.style.display = 'flex';
 
+    console.log('=== DEBUG: showConfirmModal called for table', table_number, '===');
+
+    // Zobrazit načítací modal
     modalBg.innerHTML = `
         <div class="confirm-modal">
-            <h3>Zaplatit celou objednávku?</h3>
-            
-            <div class="payment-method-section">
-                <div class="payment-method-label">Vyberte způsob platby:</div>
-                <div class="payment-options">
-                    <label class="payment-option selected" for="payment-cash">
-                        <input type="radio" id="payment-cash" name="payment-method" value="cash" checked>
-                        <div class="payment-icon">💵</div>
-                        <div class="payment-text">Hotovost</div>
-                    </label>
-                    <label class="payment-option" for="payment-card">
-                        <input type="radio" id="payment-card" name="payment-method" value="card">
-                        <div class="payment-icon">💳</div>
-                        <div class="payment-text">Karta</div>
-                    </label>
-                </div>
-            </div>
-
-            <div class="confirm-modal-btns">
-                <button class="confirm-modal-btn ok" onclick="confirmPayAll()">ZAPLATIT</button>
-                <button class="confirm-modal-btn cancel" onclick="closeModal()">ZPĚT</button>
+            <h3>Načítám údaje...</h3>
+            <div style="text-align: center; padding: 20px;">
+                <div style="font-size: 2em;">⏳</div>
+                <p>Prosím čekejte...</p>
             </div>
         </div>
     `;
-    
-    // Event listenery pro výběr platby
-    setupPaymentOptionListeners('.payment-option');
+
+    try {
+        // Načíst billing data pro stůl
+        const billRes = await fetch(API + '?action=session-bill&table_number=' + table_number);
+        const billData = await billRes.json();
+        const items = billData.data && billData.data.items ? billData.data.items : [];
+        
+        console.log('DEBUG: Načtené položky pro stůl', table_number, ':', items);
+
+        // Filtrovat pouze doručené nezaplacené položky
+        const deliveredUnpaid = items.filter(i => i.status === 'delivered');
+        console.log('DEBUG: Doručené nezaplacené položky:', deliveredUnpaid);
+
+        // Vypočítat celkovou částku
+        let totalAmount = 0;
+        deliveredUnpaid.forEach(item => {
+            const itemTotal = item.unit_price * item.quantity;
+            totalAmount += itemTotal;
+            console.log(`DEBUG: Položka ${item.item_name} - ${item.quantity}x ${item.unit_price} = ${itemTotal} Kč`);
+        });
+        
+        console.log('DEBUG: Celková částka k úhradě:', totalAmount, 'Kč');
+
+        // Zkontrolovat, zda jsou všechny položky doručené
+        const allDelivered = items.every(i => i.status === 'delivered' || i.status === 'paid');
+        const hasUnpaidDelivered = deliveredUnpaid.length > 0;
+        
+        console.log('DEBUG: Všechny položky doručené:', allDelivered);
+        console.log('DEBUG: Má nezaplacené doručené položky:', hasUnpaidDelivered);
+
+        if (!hasUnpaidDelivered) {
+            modalBg.innerHTML = `
+                <div class="confirm-modal">
+                    <h3>Žádné položky k zaplacení</h3>
+                    <p style="text-align: center; padding: 20px; font-size: 1.2em;">
+                        Všechny položky jsou již zaplacené nebo nejsou ještě doručené.
+                    </p>
+                    <div class="confirm-modal-btns">
+                        <button class="confirm-modal-btn cancel" onclick="closeModal()">ZPĚT</button>
+                    </div>
+                </div>
+            `;
+            return;
+        }
+
+        // Zobrazit správný modal s celkovou částkou
+        modalBg.innerHTML = `
+            <div class="confirm-modal">
+                <h3>Zaplatit celou objednávku?</h3>
+                
+                <div class="modal-total" style="font-size: 1.5em; font-weight: bold; color: #ff5858; text-align: center; margin: 20px 0; padding: 15px; background: #fff0f0; border-radius: 10px;">
+                    Celkem k úhradě: ${totalAmount.toFixed(0)} Kč
+                </div>
+                
+                <div class="payment-method-section">
+                    <div class="payment-method-label">Vyberte způsob platby:</div>
+                    <div class="payment-options">
+                        <label class="payment-option selected" for="payment-cash">
+                            <input type="radio" id="payment-cash" name="payment-method" value="cash" checked>
+                            <div class="payment-icon">💵</div>
+                            <div class="payment-text">Hotovost</div>
+                        </label>
+                        <label class="payment-option" for="payment-card">
+                            <input type="radio" id="payment-card" name="payment-method" value="card">
+                            <div class="payment-icon">💳</div>
+                            <div class="payment-text">Karta</div>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="confirm-modal-btns">
+                    <button class="confirm-modal-btn ok" onclick="confirmPayAll()">ZAPLATIT ${totalAmount.toFixed(0)} Kč</button>
+                    <button class="confirm-modal-btn cancel" onclick="closeModal()">ZPĚT</button>
+                </div>
+            </div>
+        `;
+        
+        // Event listenery pro výběr platby
+        setupPaymentOptionListeners('.payment-option');
+        
+    } catch (error) {
+        console.error('DEBUG: Chyba při načítání billing dat:', error);
+        modalBg.innerHTML = `
+            <div class="confirm-modal">
+                <h3>Chyba při načítání</h3>
+                <p style="text-align: center; padding: 20px; color: #dc3545;">
+                    Nepodařilo se načíst údaje o účtu. Zkuste to prosím znovu.
+                </p>
+                <div class="confirm-modal-btns">
+                    <button class="confirm-modal-btn cancel" onclick="closeModal()">ZPĚT</button>
+                </div>
+            </div>
+        `;
+    }
 }
 
 // MODAL PRO ROZDĚLENÍ ÚČTU
@@ -568,19 +645,28 @@ function closeModal() {
 
 function confirmPayAll() {
     const paymentMethod = document.querySelector('input[name="payment-method"]:checked').value;
-    console.log('Způsob platby:', paymentMethod);
+    console.log('=== DEBUG: confirmPayAll called ===');
+    console.log('DEBUG: Způsob platby:', paymentMethod);
+    console.log('DEBUG: Current table to pay:', currentTableToPay);
     payAll(currentTableToPay);
     closeModal();
 }
 
 function payAll(table_number, btn) {
+    console.log('=== DEBUG: payAll called for table', table_number, '===');
     if (btn) { btn.disabled = true; btn.textContent = 'Zpracovávám...'; }
     fetch(API + '?action=session-bill&table_number=' + table_number)
     .then(r=>r.json())
     .then(res => {
+        console.log('DEBUG: payAll - API response:', res);
         const items = res.data.items || [];
+        console.log('DEBUG: payAll - všechny položky:', items);
+        
         const allDelivered = items.every(i => i.status === 'delivered' || i.status === 'paid');
+        console.log('DEBUG: payAll - všechny položky doručené:', allDelivered);
+        
         if (!allDelivered) {
+            console.log('DEBUG: payAll - ne všechny položky jsou doručené, zrušuji platbu');
             if (btn) { 
                 btn.disabled = true; 
                 btn.textContent = 'ČEKÁ SE NA DORUČENÍ'; 
@@ -595,12 +681,16 @@ function payAll(table_number, btn) {
                 quantity: Number(i.quantity)
             }));
 
+        console.log('DEBUG: payAll - položky k zaplacení:', payItems);
+
         if (payItems.length === 0) {
+            console.log('DEBUG: payAll - žádné položky k zaplacení');
             if (btn) { btn.disabled = false; btn.textContent = 'ZAPLATIT VŠE'; }
             loadTables();
             return;
         }
 
+        console.log('DEBUG: payAll - odesílám payment request');
         fetch(API + '?action=pay-items', {
             method: 'POST',
             headers: {'Content-Type':'application/json'},
@@ -608,9 +698,18 @@ function payAll(table_number, btn) {
         })
         .then(r=>r.json())
         .then(res => {
+            console.log('DEBUG: payAll - payment response:', res);
             if (btn) { btn.disabled = false; btn.textContent = 'ZAPLATIT VŠE'; }
             loadTables();
+        })
+        .catch(error => {
+            console.error('DEBUG: payAll - payment error:', error);
+            if (btn) { btn.disabled = false; btn.textContent = 'ZAPLATIT VŠE'; }
         });
+    })
+    .catch(error => {
+        console.error('DEBUG: payAll - fetch error:', error);
+        if (btn) { btn.disabled = false; btn.textContent = 'ZAPLATIT VŠE'; }
     });
 }
 
